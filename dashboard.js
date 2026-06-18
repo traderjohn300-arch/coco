@@ -4,7 +4,7 @@
 (function () {
   "use strict";
 
-  const account = NexusWallet.requireAuth("index.html");
+  const account = NexusWallet.requireAuth();
   if (!account) return;
 
   if (typeof NexusHeader !== "undefined") {

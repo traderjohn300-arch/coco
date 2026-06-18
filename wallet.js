@@ -268,10 +268,19 @@
     restoreSession().then(render);
   }
 
-  function requireAuth(redirectTo = "index.html") {
+  function siteRoot() {
+    const path = window.location.pathname;
+    const parts = path.split("/").filter(Boolean);
+    if (parts.length && /\.[a-z0-9]+$/i.test(parts[parts.length - 1])) {
+      parts.pop();
+    }
+    return parts.length ? `/${parts.join("/")}/` : "/";
+  }
+
+  function requireAuth(redirectTo) {
     const account = getStored();
     if (!account?.address) {
-      window.location.href = redirectTo;
+      window.location.href = redirectTo || siteRoot();
       return null;
     }
     return account;

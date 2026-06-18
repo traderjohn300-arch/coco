@@ -4,24 +4,51 @@
 (function (global) {
   "use strict";
 
+  const NEXUS_DAO_URL = "https://nexusdao.io";
+
   const NAV = [
-    { href: "index.html#services", label: "Capabilities", key: "services" },
-    { href: "index.html#invest", label: "Invest", key: "invest" },
-    { href: "index.html#work", label: "Work", key: "work" },
-    { href: "index.html#about", label: "About", key: "about" },
-    { href: "index.html#careers", label: "Careers", key: "careers" },
-    { href: "index.html#contact", label: "Contact", key: "contact" },
+    { hash: "services", label: "Services", key: "services" },
+    { url: NEXUS_DAO_URL, label: "Invest", key: "invest", external: true },
+    { hash: "work", label: "Work", key: "work" },
+    { page: "careers", label: "Careers", key: "careers" },
+    { hash: "contact", label: "Contact", key: "contact" },
   ];
 
+  function siteRoot() {
+    const path = window.location.pathname;
+    const parts = path.split("/").filter(Boolean);
+    if (parts.length && /\.[a-z0-9]+$/i.test(parts[parts.length - 1])) {
+      parts.pop();
+    }
+    return parts.length ? `/${parts.join("/")}/` : "/";
+  }
+
+  function homeHref(hash) {
+    const root = siteRoot();
+    return hash ? `${root}#${hash}` : root;
+  }
+
+  function pageHref(page) {
+    return `${siteRoot()}${page}.html`;
+  }
+
+  function navHref(item) {
+    if (item.url) return item.url;
+    if (item.page) return pageHref(item.page);
+    return homeHref(item.hash);
+  }
+
   function renderHeader() {
-    const links = NAV.map(
-      (item) =>
-        `<a href="${item.href}" class="nav-link" data-nav="${item.key}">${item.label}</a>`
-    ).join("");
+    const links = NAV.map((item) => {
+      const externalAttrs = item.external
+        ? ' target="_blank" rel="noopener noreferrer"'
+        : "";
+      return `<a href="${navHref(item)}" class="nav-link" data-nav="${item.key}"${externalAttrs}>${item.label}</a>`;
+    }).join("");
 
     return `
       <div class="header-inner">
-        <a href="index.html#home" class="header-logo accent-lavender-soft">Nexus &amp; Co</a>
+        <a href="${homeHref("home")}" class="header-logo accent-lavender-soft">Nexus &amp; Co</a>
         <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="primary-nav">
           Menu
         </button>
@@ -31,7 +58,7 @@
           </nav>
         </div>
         <div class="header-cta">
-          <a href="index.html#contact" class="btn btn-primary btn-header-cta">Get in Touch</a>
+          <a href="${homeHref("contact")}" class="btn btn-primary btn-header-cta">Get in Touch</a>
         </div>
       </div>
     `;
@@ -76,6 +103,9 @@
   global.NexusHeader = {
     init,
     setActiveNav,
+    homeHref,
+    pageHref,
+    NEXUS_DAO_URL,
     NAV,
   };
 })(typeof window !== "undefined" ? window : globalThis);

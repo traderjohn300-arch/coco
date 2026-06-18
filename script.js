@@ -4,20 +4,136 @@
 (function () {
   "use strict";
 
+  const PARTNER_LOGO_DIR = "assets/partners";
+
+  const PARTNERS = [
+    { name: "Aristocrat Leisure", slug: "aristocrat", file: "Aristocrat.png", initials: "AL" },
+    { name: "Flutter Entertainment", slug: "flutter", file: "Flutter.png", initials: "FE" },
+    { name: "Evolution Gaming", slug: "evolution", file: "Evolution Gaming.png", initials: "EG" },
+    { name: "Playtech", slug: "playtech", file: "Playtech.png", initials: "PT" },
+    { name: "Stake", slug: "stake", file: "Stake.png", initials: "ST" },
+    { name: "Rainbet", slug: "rainbet", file: "Rainbet.png", initials: "RB" },
+    { name: "Natural8", slug: "natural8", file: "Natural8.png", initials: "N8" },
+    { name: "Bet365", slug: "bet365", file: "bet365.png", initials: "B3" },
+    { name: "Binance", slug: "binance", file: "Binance.png", initials: "BN" },
+    { name: "Coinbase", slug: "coinbase", file: "Coinbase.png", initials: "CB" },
+    { name: "OKX", slug: "okx", file: "OKX.png", initials: "OK" },
+    { name: "SoftSwiss", slug: "softswiss", file: "SoftSwiss.png", initials: "SS" },
+  ];
+
+  function partnerLogoSrc(partner, stage = "local") {
+    if (stage === "local" && partner.file) {
+      return `${PARTNER_LOGO_DIR}/${encodeURIComponent(partner.file)}`;
+    }
+    if (partner.domain) {
+      return `https://logo.clearbit.com/${partner.domain}`;
+    }
+    return "";
+  }
+
+  function partnerLogoStage(partner) {
+    return partner.file ? "local" : "remote";
+  }
+
+  function showPartnerFallback(img) {
+    img.classList.add("partner-logo--hidden");
+    const fallback = img.nextElementSibling;
+    if (fallback) fallback.hidden = false;
+  }
+
+  function handlePartnerLogoError(img) {
+    const partner = PARTNERS.find((item) => item.slug === img.dataset.slug);
+    if (!partner) return;
+
+    if (img.dataset.stage === "local") {
+      img.dataset.stage = "remote";
+      const remote = partnerLogoSrc(partner, "remote");
+      if (remote) {
+        img.src = remote;
+        return;
+      }
+    }
+
+    showPartnerFallback(img);
+  }
+
   const canvas = document.getElementById("portal-canvas");
   const prefersReducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)"
   ).matches;
 
-  const yearEl = document.getElementById("year");
-  if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+  if (typeof NexusFooter !== "undefined") {
+    NexusFooter.init();
+  }
 
   const isHome = document.body.classList.contains("page-home");
+  const isCareers = document.body.classList.contains("page-careers");
 
-  if (typeof NexusHeader !== "undefined" && isHome) {
-    NexusHeader.init({
-      active: window.location.hash?.slice(1) || "home",
+  function initPartners() {
+    const track = document.getElementById("partners-track");
+    if (!track) return;
+
+    const renderCard = (partner) => {
+      const stage = partnerLogoStage(partner);
+      const src = partnerLogoSrc(partner, stage);
+      const alt = `${partner.name} logo`;
+
+      return `
+      <article class="partner-card">
+        <div class="partner-logo-box">
+          <img
+            src="${src}"
+            data-slug="${partner.slug}"
+            data-stage="${stage}"
+            alt="${alt}"
+            class="partner-logo"
+            width="72"
+            height="72"
+            loading="lazy"
+            decoding="async"
+          >
+          <span class="partner-logo-fallback" hidden>${partner.initials}</span>
+        </div>
+        <p class="partner-name">${partner.name}</p>
+      </article>
+    `;
+    };
+
+    const cards = PARTNERS.map(renderCard).join("");
+    track.innerHTML = cards + cards;
+
+    track.querySelectorAll(".partner-logo").forEach((img) => {
+      img.addEventListener("error", () => handlePartnerLogoError(img));
     });
+
+    const syncMarquee = () => {
+      const halfWidth = track.scrollWidth / 2;
+      if (halfWidth > 0) {
+        track.style.setProperty("--marquee-distance", `-${halfWidth}px`);
+      }
+    };
+
+    syncMarquee();
+    window.addEventListener("resize", syncMarquee);
+    track.querySelectorAll(".partner-logo").forEach((img) => {
+      if (!img.complete) {
+        img.addEventListener("load", syncMarquee, { once: true });
+      }
+    });
+  }
+
+  if (isHome) {
+    initPartners();
+  }
+
+  if (typeof NexusHeader !== "undefined") {
+    if (isHome) {
+      NexusHeader.init({
+        active: window.location.hash?.slice(1) || "home",
+      });
+    } else if (isCareers) {
+      NexusHeader.init({ active: "careers" });
+    }
   }
 
   if (isHome && typeof NexusNav !== "undefined") {
